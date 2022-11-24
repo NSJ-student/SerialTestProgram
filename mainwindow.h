@@ -32,6 +32,7 @@ public slots:
     void onConnect();
     void onReadyRead();
     void onWriteEntered();
+    void onHexToggled(bool toggled);
 
 private:
     void setSerial();
@@ -46,8 +47,13 @@ private:
         QFormLayout * m_serialLayout;
             QWidget * m_connectWidget;
             QHBoxLayout * m_connectLayout;
-            QCheckBox * m_hexEnable;
             QCheckBox * m_timeEnable;
+            QCheckBox * m_prefixEnable;
+            QCheckBox * m_echoEnable;
+            QFrame * m_vLine;
+            QCheckBox * m_hexEnable;
+            QCheckBox * m_crEnable;
+            QCheckBox * m_lfEnable;
                 QPushButton * m_serialConnect;
                 QPushButton * m_textClear;
             QComboBox * m_serialPort;

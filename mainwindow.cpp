@@ -10,6 +10,8 @@ MainWindow::MainWindow(QWidget *parent) :
     InitializeUI();
     setSerial();
 
+    connect(m_hexEnable, SIGNAL(toggled(bool)),
+            this, SLOT(onHexToggled(bool)));
     connect(m_textClear, SIGNAL(clicked()),
             this, SLOT(onClear()));
     connect(m_serialConnect, SIGNAL(clicked()),
@@ -44,14 +46,14 @@ void MainWindow::onConnect()
             m_serial.setBaudRate(m_serialBaudRate->text().toInt());
             if(m_serial.open(QSerialPort::ReadWrite))
             {
-                m_textOut->append(QString("** Open port: %1")
+                m_textOut->append(QString("----------------------------- Open: %1")
                                   .arg(m_serialPort->currentText()));
                 m_serialWrite->setEnabled(true);
                 m_serialConnect->setText("Close");
             }
             else
             {
-                m_textOut->append("** Open fail: " + m_serial.errorString());
+                m_textOut->append("***************************** Open fail: " + m_serial.errorString());
             }
         }
     }
@@ -61,7 +63,8 @@ void MainWindow::onConnect()
 
         m_serialWrite->setEnabled(false);
         m_serialConnect->setText("Connect");
-        m_textOut->append("** Closed");
+        m_textOut->append(QString("----------------------------- Close: %1")
+                          .arg(m_serialPort->currentText()));
     }
 }
 
@@ -70,29 +73,30 @@ void MainWindow::onReadyRead()
     qDebug() << "rx: " << m_serial.bytesAvailable();
     QByteArray ba = m_serial.readAll();
 
+    if(m_timeEnable->isChecked())
+    {
+        m_textOut->moveCursor(QTextCursor::End);
+        m_textOut->textCursor().insertText(QTime::currentTime().toString("[hh:mm:ss.zzz] "));
+        m_textOut->moveCursor(QTextCursor::End);
+    }
+    if(m_prefixEnable->isChecked())
+    {
+        m_textOut->moveCursor(QTextCursor::End);
+        m_textOut->textCursor().insertText(QString("Read: "));
+        m_textOut->moveCursor(QTextCursor::End);
+    }
+
     if(m_hexEnable->isChecked())
     {
-        if(m_timeEnable->isChecked())
-        {
-            m_textOut->append(QTime::currentTime().toString("[hh:mm:ss.zzz] ")
-                        + QString("Read: ") + ba.toHex().data());
-        }
-        else
-        {
-            m_textOut->append(QString("Read: ") + ba.toHex().data());
-        }
+        m_textOut->moveCursor(QTextCursor::End);
+        m_textOut->textCursor().insertText(ba.toHex().data());
+        m_textOut->moveCursor(QTextCursor::End);
     }
     else
     {
-        if(m_timeEnable->isChecked())
-        {
-            m_textOut->append(QTime::currentTime().toString("[hh:mm:ss.zzz] ")
-                        + QString("Read: ") + QString(ba));
-        }
-        else
-        {
-            m_textOut->append(QString("Read: ") + QString(ba));
-        }
+        m_textOut->moveCursor(QTextCursor::End);
+        m_textOut->textCursor().insertText(QString(ba));
+        m_textOut->moveCursor(QTextCursor::End);
     }
 }
 
@@ -104,28 +108,57 @@ void MainWindow::onWriteEntered()
         {
             QByteArray ba = QByteArray::fromHex(m_serialWrite->text().toUtf8());
             m_serial.write(ba.data(), ba.length());
-            if(m_timeEnable->isChecked())
+
+            if(m_echoEnable->isChecked())
             {
-                m_textOut->append(QTime::currentTime().toString("[hh:mm:ss.zzz] ")
-                            + QString("Write: ") + QString(m_serialWrite->text().toUtf8()));
-            }
-            else
-            {
-                m_textOut->append(QString("Write: ") + QString(m_serialWrite->text().toUtf8()));
+                if(m_timeEnable->isChecked())
+                {
+                    m_textOut->moveCursor(QTextCursor::End);
+                    m_textOut->textCursor().insertText(QTime::currentTime().toString("[hh:mm:ss.zzz] "));
+                    m_textOut->moveCursor(QTextCursor::End);
+                }
+                if(m_prefixEnable->isChecked())
+                {
+                    m_textOut->moveCursor(QTextCursor::End);
+                    m_textOut->textCursor().insertText(QString("Write: "));
+                    m_textOut->moveCursor(QTextCursor::End);
+                }
+
+                m_textOut->moveCursor(QTextCursor::End);
+                m_textOut->textCursor().insertText(m_serialWrite->text().toUtf8());
+                m_textOut->moveCursor(QTextCursor::End);
             }
         }
         else
         {
             QByteArray ba = m_serialWrite->text().toUtf8();
-            m_serial.write(ba.data(), ba.length());
-            if(m_timeEnable->isChecked())
+            if(m_crEnable->isChecked())
             {
-                m_textOut->append(QTime::currentTime().toString("[hh:mm:ss.zzz] ")
-                            + QString(">Write: ") + m_serialWrite->text());
+                ba.append(0x0D);
             }
-            else
+            if(m_lfEnable->isChecked())
             {
-                m_textOut->append(QString(">Write: ") + m_serialWrite->text());
+                ba.append(0x0A);
+            }
+            m_serial.write(ba.data(), ba.length());
+
+            if(m_echoEnable->isChecked())
+            {
+                if(m_timeEnable->isChecked())
+                {
+                    m_textOut->moveCursor(QTextCursor::End);
+                    m_textOut->textCursor().insertText(QTime::currentTime().toString("[hh:mm:ss.zzz] "));
+                    m_textOut->moveCursor(QTextCursor::End);
+                }
+                if(m_prefixEnable->isChecked())
+                {
+                    m_textOut->moveCursor(QTextCursor::End);
+                    m_textOut->textCursor().insertText(QString("Write: "));
+                    m_textOut->moveCursor(QTextCursor::End);
+                }
+                m_textOut->moveCursor(QTextCursor::End);
+                m_textOut->textCursor().insertText(m_serialWrite->text());
+                m_textOut->moveCursor(QTextCursor::End);
             }
         }
         m_serialWrite->clear();
@@ -134,6 +167,12 @@ void MainWindow::onWriteEntered()
     {
         m_textOut->append("** not opened");
     }
+}
+
+void MainWindow::onHexToggled(bool toggled)
+{
+    m_crEnable->setEnabled(!toggled);
+    m_lfEnable->setEnabled(!toggled);
 }
 
 void MainWindow::setSerial()
@@ -166,12 +205,25 @@ void MainWindow::InitializeUI()
             m_connectLayout = new QHBoxLayout;
             m_connectLayout->setMargin(0);
             m_connectWidget->setLayout(m_connectLayout);
-                m_hexEnable = new QCheckBox("Hex");
                 m_timeEnable = new QCheckBox("Time");
+                m_echoEnable = new QCheckBox("Echo");
+                m_prefixEnable = new QCheckBox("Prefix");
+                m_vLine = new QFrame();
+                m_vLine->setFrameShape(QFrame::VLine);
+                m_vLine->setFrameShadow(QFrame::Sunken);
+                m_hexEnable = new QCheckBox("Hex");
+                m_crEnable = new QCheckBox("CR");
+                m_crEnable->setChecked(true);
+                m_lfEnable = new QCheckBox("LF");
                 m_serialConnect = new QPushButton("Connect");
                 m_textClear = new QPushButton("Clear");
-                m_connectLayout->addWidget(m_hexEnable);
                 m_connectLayout->addWidget(m_timeEnable);
+                m_connectLayout->addWidget(m_echoEnable);
+                m_connectLayout->addWidget(m_prefixEnable);
+                m_connectLayout->addWidget(m_vLine);
+                m_connectLayout->addWidget(m_hexEnable);
+                m_connectLayout->addWidget(m_crEnable);
+                m_connectLayout->addWidget(m_lfEnable);
                 m_connectLayout->addStretch();
                 m_connectLayout->addWidget(m_serialConnect);
                 m_connectLayout->addWidget(m_textClear);
@@ -185,6 +237,7 @@ void MainWindow::InitializeUI()
             m_serialLayout->addRow(m_connectWidget);
 
         m_textOut = new QTextEdit();
+        m_textOut->setFont(QFont(QString("Courier 10 Pitch")));
 
         m_mainLayout->addWidget(m_serialGroup);
         m_mainLayout->addWidget(m_textOut);
