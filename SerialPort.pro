@@ -4,10 +4,16 @@
 #
 #-------------------------------------------------
 
+# sudo usermod -a -G dialout $USER
+
 QT       += core gui widgets serialport
 
 TARGET = SerialPort
 TEMPLATE = app
+
+linux-g++ | linux-g++-64 | linux-g++-32 {
+QMAKE_LFLAGS += -no-pie
+}
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings

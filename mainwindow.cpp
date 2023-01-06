@@ -16,11 +16,15 @@ MainWindow::MainWindow(QWidget *parent) :
             this, SLOT(onClear()));
     connect(m_serialConnect, SIGNAL(clicked()),
             this, SLOT(onConnect()));
+    connect(m_portRefresh, SIGNAL(clicked()),
+            this, SLOT(onPortRefresh()));
     connect(&m_serial, SIGNAL(readyRead()),
             this, SLOT(onReadyRead()));
     connect(m_serialWrite, SIGNAL(returnPressed()),
             this, SLOT(onWriteEntered()));
 
+    m_serialPort->setEnabled(true);
+    m_serialBaudRate->setEnabled(true);
     m_serialWrite->setEnabled(false);
 }
 
@@ -48,6 +52,8 @@ void MainWindow::onConnect()
             {
                 m_textOut->append(QString("----------------------------- Open: %1")
                                   .arg(m_serialPort->currentText()));
+                m_serialPort->setEnabled(false);
+                m_serialBaudRate->setEnabled(false);
                 m_serialWrite->setEnabled(true);
                 m_serialConnect->setText("Close");
             }
@@ -61,10 +67,26 @@ void MainWindow::onConnect()
     {
         if(m_serial.isOpen())   m_serial.close();
 
+        m_serialPort->setEnabled(true);
+        m_serialBaudRate->setEnabled(true);
         m_serialWrite->setEnabled(false);
         m_serialConnect->setText("Connect");
         m_textOut->append(QString("----------------------------- Close: %1")
                           .arg(m_serialPort->currentText()));
+    }
+}
+
+void MainWindow::onPortRefresh()
+{
+    if(m_serial.isOpen())
+    {
+        return;
+    }
+
+    m_serialPort->clear();
+    foreach(const QSerialPortInfo &info, QSerialPortInfo::availablePorts())
+    {
+        m_serialPort->addItem(info.portName());
     }
 }
 
@@ -217,6 +239,7 @@ void MainWindow::InitializeUI()
                 m_lfEnable = new QCheckBox("LF");
                 m_serialConnect = new QPushButton("Connect");
                 m_textClear = new QPushButton("Clear");
+                m_portRefresh = new QPushButton("Refresh");
                 m_connectLayout->addWidget(m_timeEnable);
                 m_connectLayout->addWidget(m_echoEnable);
                 m_connectLayout->addWidget(m_prefixEnable);
@@ -227,6 +250,7 @@ void MainWindow::InitializeUI()
                 m_connectLayout->addStretch();
                 m_connectLayout->addWidget(m_serialConnect);
                 m_connectLayout->addWidget(m_textClear);
+                m_connectLayout->addWidget(m_portRefresh);
             m_serialPort = new QComboBox();
             m_serialBaudRate = new QLineEdit("115200");
             m_serialWrite = new QLineEdit;

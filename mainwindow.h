@@ -30,6 +30,7 @@ public:
 public slots:
     void onClear();
     void onConnect();
+    void onPortRefresh();
     void onReadyRead();
     void onWriteEntered();
     void onHexToggled(bool toggled);
@@ -56,6 +57,7 @@ private:
             QCheckBox * m_lfEnable;
                 QPushButton * m_serialConnect;
                 QPushButton * m_textClear;
+                QPushButton * m_portRefresh;
             QComboBox * m_serialPort;
             QLineEdit * m_serialBaudRate;
             QLineEdit * m_serialWrite;
