@@ -14,6 +14,7 @@
 #include <QSerialPortInfo>
 #include <QTime>
 #include <QDebug>
+#include <QScrollBar>
 
 namespace Ui {
 class MainWindow;
@@ -28,40 +29,21 @@ public:
     ~MainWindow();
 
 public slots:
-    void onClear();
-    void onConnect();
-    void onPortRefresh();
     void onReadyRead();
-    void onWriteEntered();
-    void onHexToggled(bool toggled);
+
+private slots:
+    void on_btnSerialOpenClose_clicked(bool checked);
+    void on_lineSerialWrite_returnPressed();
+    void on_btnPortRefresh_clicked();
+    void on_cbEnableHex_clicked(bool checked);
+    void on_btnLogClear_clicked();
 
 private:
     void setSerial();
-    void InitializeUI();
 
     Ui::MainWindow *ui;
     QSerialPort m_serial;
 
-    QWidget * m_mainWidget;
-    QVBoxLayout * m_mainLayout;
-        QGroupBox * m_serialGroup;
-        QFormLayout * m_serialLayout;
-            QWidget * m_connectWidget;
-            QHBoxLayout * m_connectLayout;
-            QCheckBox * m_timeEnable;
-            QCheckBox * m_prefixEnable;
-            QCheckBox * m_echoEnable;
-            QFrame * m_vLine;
-            QCheckBox * m_hexEnable;
-            QCheckBox * m_crEnable;
-            QCheckBox * m_lfEnable;
-                QPushButton * m_serialConnect;
-                QPushButton * m_textClear;
-                QPushButton * m_portRefresh;
-            QComboBox * m_serialPort;
-            QLineEdit * m_serialBaudRate;
-            QLineEdit * m_serialWrite;
-        QTextEdit * m_textOut;
 };
 
 #endif // MAINWINDOW_H
